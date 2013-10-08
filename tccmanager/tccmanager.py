@@ -45,6 +45,10 @@ def createDB(path):
     conn.close()
 
 def main():
+
+    global TCC_DIR
+    global DBPATH
+
     usage = "usage: %prog --plist db_entries.plist | (--allow | --disallow) app.bundle.id"
     o = optparse.OptionParser(usage=usage)
     o.add_option('-p', '--plist', action="store",
@@ -64,15 +68,17 @@ Can be specified multiple times.')
     db_exists = False
     if not os.path.exists(TCC_DIR):
         os.mkdir(TCC_DIR, int('700', 8))
+        createDB(DBPATH)
     else:
+        if not os.path.isfile(DBPATH):
+            createDB(DBPATH)
+        if os.path.getsize(DBPATH) == 0:
+            createDB(DBPATH)
         db_exists = True
 
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
 
-    # Setup the database if it doesn't already exist
-    if not db_exists:
-        createDB(DBPATH)
 
     if opts.plist:
         try:
@@ -98,7 +104,7 @@ Can be specified multiple times.')
         if opts.allow:
             for bundle_id in opts.allow:
                 c.execute('''INSERT or REPLACE INTO access values
-                    ('kTCCServiceAddressBook', ?, 0, 1, 0)''', (bundle_id,))
+                    ('kTCCServiceAddressBook', ?, 0, 1, 1)''', (bundle_id,))
                 conn.commit()
 
         if opts.disallow:
